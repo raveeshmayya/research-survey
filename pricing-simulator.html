@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pricing Decision Simulator</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Source+Serif+4:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --ink: #1a1a2e;
+    --ink-light: #3d3d5c;
+    --paper: #f7f4ef;
+    --paper-dark: #ede9e1;
+    --accent: #c0392b;
+    --accent-light: #e8d5d3;
+    --gold: #b8860b;
+    --success: #1a5c3a;
+    --success-bg: #d4edda;
+    --fail: #7b1a1a;
+    --fail-bg: #f5d5d5;
+    --border: #ccc4b4;
+  }
+
+  body {
+    font-family: 'Source Serif 4', Georgia, serif;
+    background-color: var(--paper);
+    color: var(--ink);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+    background-image:
+      repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 27px,
+        rgba(180,170,150,0.12) 27px,
+        rgba(180,170,150,0.12) 28px
+      );
+  }
+
+  .card {
+    background: white;
+    max-width: 680px;
+    width: 100%;
+    border: 1px solid var(--border);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.04), 0 8px 32px rgba(0,0,0,0.08);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .card::before {
+    content: '';
+    display: block;
+    height: 5px;
+    background: linear-gradient(90deg, var(--accent) 0%, var(--gold) 100%);
+  }
+
+  .card-header {
+    padding: 36px 48px 24px;
+    border-bottom: 1px solid var(--paper-dark);
+  }
+
+  .label-tag {
+    font-family: 'Source Serif 4', serif;
+    font-size: 10px;
+    font-weight: 400;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 10px;
+  }
+
+  h1 {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 28px;
+    font-weight: 700;
+    line-height: 1.2;
+    color: var(--ink);
+    margin-bottom: 6px;
+  }
+
+  .subtitle {
+    font-size: 13px;
+    color: var(--ink-light);
+    font-style: italic;
+  }
+
+  .card-body {
+    padding: 32px 48px 40px;
+  }
+
+  .intro-box {
+    background: var(--paper);
+    border-left: 3px solid var(--gold);
+    padding: 18px 20px;
+    margin-bottom: 32px;
+    font-size: 14.5px;
+    line-height: 1.8;
+    color: var(--ink-light);
+  }
+
+  .intro-box p + p {
+    margin-top: 10px;
+  }
+
+  .intro-box strong {
+    color: var(--ink);
+    font-weight: 600;
+  }
+
+  .trials-label {
+    font-family: 'Playfair Display', serif;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--ink);
+    margin-bottom: 20px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--paper-dark);
+  }
+
+  .trial-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+
+  .trial-num {
+    font-family: 'Playfair Display', serif;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-light);
+    width: 52px;
+    flex-shrink: 0;
+  }
+
+  .trial-input {
+    flex: 1;
+    border: 1px solid var(--border);
+    background: var(--paper);
+    padding: 11px 14px;
+    font-family: 'Source Serif 4', serif;
+    font-size: 15px;
+    color: var(--ink);
+    outline: none;
+    transition: border-color 0.2s, background 0.2s;
+  }
+
+  .trial-input:focus {
+    border-color: var(--gold);
+    background: white;
+  }
+
+  .trial-input::placeholder {
+    color: #aaa;
+    font-style: italic;
+    font-size: 13px;
+  }
+
+  .currency-wrap {
+    position: relative;
+    flex: 1;
+  }
+
+  .currency-wrap::before {
+    content: '$';
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--ink-light);
+    font-size: 14px;
+    pointer-events: none;
+  }
+
+  .currency-wrap .trial-input {
+    padding-left: 26px;
+    width: 100%;
+  }
+
+  .btn-next {
+    display: block;
+    width: 100%;
+    margin-top: 32px;
+    padding: 14px 20px;
+    background: var(--ink);
+    color: white;
+    font-family: 'Playfair Display', serif;
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    border: none;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+
+  .btn-next:hover { background: var(--accent); }
+
+  /* RESULTS PAGE */
+  #results-page { display: none; }
+
+  .results-header {
+    padding: 36px 48px 24px;
+    border-bottom: 1px solid var(--paper-dark);
+  }
+
+  .result-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    padding: 18px 0;
+    border-bottom: 1px solid var(--paper-dark);
+  }
+
+  .result-item:last-of-type { border-bottom: none; }
+
+  .result-trial-num {
+    font-family: 'Playfair Display', serif;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-light);
+    width: 52px;
+    flex-shrink: 0;
+    padding-top: 3px;
+  }
+
+  .result-content { flex: 1; }
+
+  .result-bid {
+    font-size: 13px;
+    color: var(--ink-light);
+    margin-bottom: 6px;
+  }
+
+  .result-verdict {
+    font-family: 'Playfair Display', serif;
+    font-size: 16px;
+    font-weight: 700;
+  }
+
+  .verdict-sold {
+    color: var(--success);
+  }
+
+  .verdict-nosale {
+    color: var(--fail);
+  }
+
+  .verdict-badge {
+    display: inline-block;
+    padding: 3px 10px;
+    font-size: 11px;
+    font-weight: 400;
+    font-family: 'Source Serif 4', serif;
+    letter-spacing: 0.05em;
+    margin-left: 8px;
+    vertical-align: middle;
+  }
+
+  .badge-sold {
+    background: var(--success-bg);
+    color: var(--success);
+  }
+
+  .badge-nosale {
+    background: var(--fail-bg);
+    color: var(--fail);
+  }
+
+  .btn-next-page {
+    display: block;
+    width: 100%;
+    margin-top: 28px;
+    padding: 14px 20px;
+    background: var(--ink);
+    color: white;
+    font-family: 'Playfair Display', serif;
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    border: none;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+
+  .btn-next-page:hover { background: var(--accent); }
+
+  .error-msg {
+    color: var(--accent);
+    font-size: 12px;
+    font-style: italic;
+    margin-top: 10px;
+    display: none;
+  }
+
+  @media (max-width: 520px) {
+    .card-header, .card-body, .results-header, .card-body-results { padding-left: 24px; padding-right: 24px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- INPUT PAGE -->
+<div class="card" id="input-page">
+  <div class="card-header">
+    <div class="label-tag">Research Simulation</div>
+    <h1>Pricing Decision Simulator</h1>
+    <div class="subtitle">An interactive market experiment</div>
+  </div>
+  <div class="card-body">
+    <div class="intro-box">
+      <p>In this simulation, you are a <strong>seller</strong> trying to close a deal with a buyer. The buyer has a private valuation for the product — a maximum price they are willing to pay.</p>
+      <p>You will make <strong>three pricing attempts</strong>. For each attempt, enter the price you would quote to the buyer. After submitting, you will see whether each quote resulted in a sale.</p>
+      <p><em>A sale occurs only when the price you quote does not exceed what the buyer is willing to pay.</em></p>
+    </div>
+
+    <div class="trials-label">Enter your three price quotes</div>
+
+    <div class="trial-row">
+      <div class="trial-num">Trial 1</div>
+      <div class="currency-wrap">
+        <input type="number" class="trial-input" id="val1" placeholder="e.g. 30000" min="0">
+      </div>
+    </div>
+
+    <div class="trial-row">
+      <div class="trial-num">Trial 2</div>
+      <div class="currency-wrap">
+        <input type="number" class="trial-input" id="val2" placeholder="e.g. 35000" min="0">
+      </div>
+    </div>
+
+    <div class="trial-row">
+      <div class="trial-num">Trial 3</div>
+      <div class="currency-wrap">
+        <input type="number" class="trial-input" id="val3" placeholder="e.g. 40000" min="0">
+      </div>
+    </div>
+
+    <div class="error-msg" id="error-msg">⚠ Please fill in all three price quotes before continuing.</div>
+
+    <button class="btn-next" onclick="showResults()">View Outcomes →</button>
+  </div>
+</div>
+
+<!-- RESULTS PAGE -->
+<div class="card" id="results-page">
+  <div class="results-header">
+    <div class="label-tag">Simulation Results</div>
+    <h1>Market Outcomes</h1>
+    <div class="subtitle">Based on your three price quotes</div>
+  </div>
+  <div class="card-body" id="results-body">
+    <!-- Dynamically filled -->
+    <button class="btn-next-page" onclick="goToNextPage()">Continue to Next Page →</button>
+  </div>
+</div>
+
+<script>
+  const THRESHOLD = 34400;
+
+  // Disable right-click
+  document.addEventListener('contextmenu', function(e) { e.preventDefault(); });
+
+  // Push two history states so the back button loops rather than going back
+  history.pushState(null, null, location.href);
+  history.pushState(null, null, location.href);
+  window.addEventListener('popstate', function() {
+    history.pushState(null, null, location.href);
+  });
+
+  function showResults() {
+    const v1 = document.getElementById('val1').value.trim();
+    const v2 = document.getElementById('val2').value.trim();
+    const v3 = document.getElementById('val3').value.trim();
+    const err = document.getElementById('error-msg');
+
+    if (!v1 || !v2 || !v3) {
+      err.style.display = 'block';
+      return;
+    }
+    err.style.display = 'none';
+
+    const vals = [v1, v2, v3];
+    const body = document.getElementById('results-body');
+
+    const nextBtn = body.querySelector('.btn-next-page');
+    body.querySelectorAll('.result-item').forEach(el => el.remove());
+
+    vals.forEach((val, i) => {
+      const num = parseFloat(val);
+      const sold = num <= THRESHOLD;
+      const item = document.createElement('div');
+      item.className = 'result-item';
+      item.innerHTML = `
+        <div class="result-trial-num">Trial ${i + 1}</div>
+        <div class="result-content">
+          <div class="result-bid">Your quoted price: <strong>$${Number(num).toLocaleString()}</strong></div>
+          <div class="result-verdict ${sold ? 'verdict-sold' : 'verdict-nosale'}">
+            ${sold
+              ? 'There was a successful sale.'
+              : 'There was no successful sale.'}
+            <span class="verdict-badge ${sold ? 'badge-sold' : 'badge-nosale'}">${sold ? 'SOLD' : 'NO SALE'}</span>
+          </div>
+        </div>`;
+      body.insertBefore(item, nextBtn);
+    });
+
+    // Lock inputs so participant cannot edit after submitting
+    ['val1','val2','val3'].forEach(id => {
+      document.getElementById(id).disabled = true;
+    });
+
+    document.getElementById('input-page').style.display = 'none';
+    document.getElementById('results-page').style.display = 'block';
+  }
+
+  function goToNextPage() {
+    // Replace with your actual Qualtrics next-page URL or use history if embedded
+    alert("Proceeding to the next section...");
+    // e.g. window.location.href = "https://yoursurvey.qualtrics.com/next";
+  }
+</script>
+</body>
+</html>
